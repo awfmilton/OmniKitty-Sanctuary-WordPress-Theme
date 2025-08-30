@@ -169,3 +169,95 @@ function omnikitty_register_taxonomies() {
     register_taxonomy( 'cat_breed', 'cat', $breed_args );
 }
 add_action( 'init', 'omnikitty_register_taxonomies', 0 );
+
+/**
+ * Adds a meta box to the 'Cat' CPT edit screen.
+ */
+function omnikitty_add_cat_details_meta_box() {
+    add_meta_box(
+        'omnikitty_cat_details',          // Unique ID
+        'Cat Details',                    // Box title
+        'omnikitty_cat_details_html',     // Content callback, must be of type callable
+        'cat',                            // Post type
+        'normal',                         // Context
+        'high'                            // Priority
+    );
+}
+add_action( 'add_meta_boxes', 'omnikitty_add_cat_details_meta_box' );
+
+/**
+ * Renders the HTML for the 'Cat Details' meta box.
+ *
+ * @param WP_Post $post The post object.
+ */
+function omnikitty_cat_details_html( $post ) {
+    $age = get_post_meta( $post->ID, '_cat_age', true );
+    $gender = get_post_meta( $post->ID, '_cat_gender', true );
+    $special_needs = get_post_meta( $post->ID, '_cat_special_needs', true );
+
+    // Add a nonce field for security
+    wp_nonce_field( 'omnikitty_save_cat_details_data', 'omnikitty_cat_details_nonce' );
+    ?>
+    <p>
+        <label for="omnikitty_cat_age"><strong><?php esc_html_e( 'Age', 'omnikitty' ); ?></strong></label><br>
+        <input type="text" id="omnikitty_cat_age" name="omnikitty_cat_age" value="<?php echo esc_attr( $age ); ?>" class="widefat">
+    </p>
+    <p>
+        <label for="omnikitty_cat_gender"><strong><?php esc_html_e( 'Gender', 'omnikitty' ); ?></strong></label><br>
+        <select id="omnikitty_cat_gender" name="omnikitty_cat_gender" class="widefat">
+            <option value="Male" <?php selected( $gender, 'Male' ); ?>><?php esc_html_e( 'Male', 'omnikitty' ); ?></option>
+            <option value="Female" <?php selected( $gender, 'Female' ); ?>><?php esc_html_e( 'Female', 'omnikitty' ); ?></option>
+        </select>
+    </p>
+    <p>
+        <label for="omnikitty_cat_special_needs"><strong><?php esc_html_e( 'Special Needs', 'omnikitty' ); ?></strong></label><br>
+        <textarea id="omnikitty_cat_special_needs" name="omnikitty_cat_special_needs" class="widefat" rows="4"><?php echo esc_textarea( $special_needs ); ?></textarea>
+    </p>
+    <?php
+}
+
+/**
+ * Saves the custom meta data for the 'Cat' CPT.
+ *
+ * @param int $post_id The ID of the post being saved.
+ */
+function omnikitty_save_cat_details_data( $post_id ) {
+    // Check if our nonce is set.
+    if ( ! isset( $_POST['omnikitty_cat_details_nonce'] ) ) {
+        return;
+    }
+
+    // Verify that the nonce is valid.
+    if ( ! wp_verify_nonce( $_POST['omnikitty_cat_details_nonce'], 'omnikitty_save_cat_details_data' ) ) {
+        return;
+    }
+
+    // If this is an autosave, our form has not been submitted, so we don't want to do anything.
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+        return;
+    }
+
+    // Check the user's permissions.
+    if ( ! current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
+
+    // Sanitize and save the 'Age' field.
+    if ( isset( $_POST['omnikitty_cat_age'] ) ) {
+        $age = sanitize_text_field( $_POST['omnikitty_cat_age'] );
+        update_post_meta( $post_id, '_cat_age', $age );
+    }
+
+    // Sanitize and save the 'Gender' field.
+    if ( isset( $_POST['omnikitty_cat_gender'] ) ) {
+        $gender = sanitize_text_field( $_POST['omnikitty_cat_gender'] );
+        update_post_meta( $post_id, '_cat_gender', $gender );
+    }
+
+    // Sanitize and save the 'Special Needs' field.
+    if ( isset( $_POST['omnikitty_cat_special_needs'] ) ) {
+        $special_needs = sanitize_textarea_field( $_POST['omnikitty_cat_special_needs'] );
+        update_post_meta( $post_id, '_cat_special_needs', $special_needs );
+    }
+}
+add_action( 'save_post_cat', 'omnikitty_save_cat_details_data' );
