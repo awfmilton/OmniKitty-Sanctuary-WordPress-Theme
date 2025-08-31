@@ -110,3 +110,16 @@ function omnikitty_filter_cats_handler() {
 }
 add_action('wp_ajax_filter_cats', 'omnikitty_filter_cats_handler');
 add_action('wp_ajax_nopriv_filter_cats', 'omnikitty_filter_cats_handler');
+
+/**
+ * Modify the main search query to include multiple post types.
+ *
+ * @param WP_Query $query The main query object.
+ */
+function omnikitty_child_expand_search_query( $query ) {
+    // Check if it's a search query and not in the admin area
+    if ( ! is_admin() && $query->is_main_query() && $query->is_search() ) {
+        $query->set( 'post_type', array( 'post', 'page', 'cat' ) );
+    }
+}
+add_action( 'pre_get_posts', 'omnikitty_child_expand_search_query' );
