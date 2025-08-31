@@ -27,7 +27,7 @@
 			$omnikitty_description = get_bloginfo( 'description', 'display' );
 			if ( $omnikitty_description || is_customize_preview() ) :
 				?>
-				<p class="site-description"><?php echo $omnikitty_description; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></p>
+				<p class="site-description"><?php echo esc_html( $omnikitty_description ); ?></p>
 			<?php endif; ?>
 		</div><!-- .site-branding -->
 

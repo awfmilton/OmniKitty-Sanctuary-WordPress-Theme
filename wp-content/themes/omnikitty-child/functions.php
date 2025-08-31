@@ -23,9 +23,10 @@ function omnikitty_child_enqueue_assets() {
 	);
 
 	// Enqueue child theme javascript.
+	$js_file = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '/js/child-theme.js' : '/js/child-theme.min.js';
 	wp_enqueue_script(
 		'child-theme-js',
-		get_stylesheet_directory_uri() . '/js/child-theme.js',
+		get_stylesheet_directory_uri() . $js_file,
 		array( 'jquery' ), // Add jQuery as a dependency
 		wp_get_theme()->get( 'Version' ),
 		true // Load in footer
@@ -364,3 +365,15 @@ function omnikitty_child_setup_theme_content() {
     update_option( 'omnikitty_content_setup_done', true );
 }
 add_action( 'after_switch_theme', 'omnikitty_child_setup_theme_content' );
+
+/**
+ * Adds the 'loading="lazy"' attribute to all images.
+ *
+ * @param array $attr Attributes for the image tag.
+ * @return array The modified attributes.
+ */
+function omnikitty_child_add_lazy_loading( $attr ) {
+    $attr['loading'] = 'lazy';
+    return $attr;
+}
+add_filter( 'wp_get_attachment_image_attributes', 'omnikitty_child_add_lazy_loading', 10, 1 );

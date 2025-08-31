@@ -4,17 +4,17 @@ A professional, production-ready WordPress theme for the OmniKitty Cat Sanctuary
 
 ## 📦 Package Overview
 
-*   **18 Total Files** (312KB total size)
+*   **20 Total Files** (313KB total size)
 *   **12 PHP Files** - Complete functionality
-*   **2 CSS Files** - Responsive styling
-*   **1 JS File** - Interactive features
+*   **4 CSS Files** - (Theme identification and basic accessibility styles)
+*   **2 JS Files** - (Source and minified)
 *   **2 Documentation Files** - Complete guides
 
 ## 🏗️ Theme Architecture
 
 ### Parent Theme (omnikitty-theme)
 
-*   `style.css` - Base theme styles with complete responsive design
+*   `style.css` - Theme identification file.
 *   `functions.php` - Core functionality, custom post types, taxonomies, form handlers
 *   `header.php` - Professional header with navigation and mobile menu
 *   `footer.php` - Feature-rich footer with social links and newsletter signup
@@ -22,7 +22,7 @@ A professional, production-ready WordPress theme for the OmniKitty Cat Sanctuary
 
 ### Child Theme (omnikitty-child)
 
-*   `style.css` - Enhanced styles and custom enhancements
+*   `style.css` - Child theme identification and accessibility focus styles.
 *   `functions.php` - Sample content creation and advanced features
 *   `front-page.php` - Stunning homepage with hero section and featured content
 *   `archive-cat.php` - Cat listing page with filtering and advanced search
@@ -156,11 +156,11 @@ A professional, production-ready WordPress theme for the OmniKitty Cat Sanctuary
 
 ## 🚀 Installation Process
 
-1.  **Upload Files**: Place the `wp-content` folder in your WordPress installation
-2.  **Activate Parent**: Activate "OmniKitty Cat Sanctuary" theme
-3.  **Activate Child**: Activate "OmniKitty Cat Sanctuary Child" theme
-4.  **Automatic Setup**: Sample content and settings are created automatically
-5.  **Configure**: Set up menus and customize content as needed
+1.  **Upload Parent Theme**: In the WordPress admin, go to **Appearance > Themes > Add New > Upload Theme** and upload the `omnikitty-theme.zip` file. **Do not activate it.**
+2.  **Upload Child Theme**: Repeat the process for the `omnikitty-child.zip` file.
+3.  **Activate Child Theme**: From the Themes page, activate the "OmniKitty Cat Sanctuary Child" theme.
+4.  **Automatic Setup**: The theme's sample content and pages will be created automatically upon activation.
+5.  **Configure**: Navigate to **Appearance > Menus** to set up your navigation menus.
 
 ## 🎯 What Makes This Special
 
