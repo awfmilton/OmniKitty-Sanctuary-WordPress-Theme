@@ -123,3 +123,134 @@ function omnikitty_child_expand_search_query( $query ) {
     }
 }
 add_action( 'pre_get_posts', 'omnikitty_child_expand_search_query' );
+
+/**
+ * Secure Form Handling
+ */
+
+// Global variable to store form feedback
+$form_feedback = [];
+
+/**
+ * Handles the submission of the Contact Form.
+ */
+function omnikitty_handle_contact_form() {
+    global $form_feedback;
+
+    if ( isset( $_POST['contact_form_submit'] ) ) {
+        // Verify nonce
+        if ( ! isset( $_POST['contact_form_nonce'] ) || ! wp_verify_nonce( $_POST['contact_form_nonce'], 'contact_form_action' ) ) {
+            $form_feedback['contact_error'] = 'Nonce verification failed. Please try again.';
+            return;
+        }
+
+        // Sanitize form fields
+        $name = isset( $_POST['contact_name'] ) ? sanitize_text_field( $_POST['contact_name'] ) : '';
+        $email = isset( $_POST['contact_email'] ) ? sanitize_email( $_POST['contact_email'] ) : '';
+        $message = isset( $_POST['contact_message'] ) ? sanitize_textarea_field( $_POST['contact_message'] ) : '';
+
+        // Basic validation
+        if ( empty( $name ) || empty( $email ) || empty( $message ) ) {
+            $form_feedback['contact_error'] = 'Please fill in all required fields.';
+            return;
+        }
+        if ( ! is_email( $email ) ) {
+            $form_feedback['contact_error'] = 'Please provide a valid email address.';
+            return;
+        }
+
+        // At this point, you would typically send an email.
+        // For this implementation, we'll just set a success message.
+        // Example: wp_mail( get_option('admin_email'), 'New Contact Form Submission', "Name: $name\nEmail: $email\nMessage: $message" );
+
+        $form_feedback['contact_success'] = 'Thank you for your message! We will get back to you shortly.';
+
+        // Clear the form fields after successful submission
+        unset($_POST['contact_name'], $_POST['contact_email'], $_POST['contact_message']);
+    }
+}
+add_action( 'init', 'omnikitty_handle_contact_form' );
+
+/**
+ * Handles the submission of the Volunteer Form.
+ */
+function omnikitty_handle_volunteer_form() {
+    global $form_feedback;
+
+    if ( isset( $_POST['volunteer_form_submit'] ) ) {
+        // Verify nonce
+        if ( ! isset( $_POST['volunteer_form_nonce'] ) || ! wp_verify_nonce( $_POST['volunteer_form_nonce'], 'volunteer_form_action' ) ) {
+            $form_feedback['volunteer_error'] = 'Nonce verification failed. Please try again.';
+            return;
+        }
+
+        // Sanitize form fields
+        $name = isset( $_POST['volunteer_name'] ) ? sanitize_text_field( $_POST['volunteer_name'] ) : '';
+        $email = isset( $_POST['volunteer_email'] ) ? sanitize_email( $_POST['volunteer_email'] ) : '';
+        $availability = isset( $_POST['volunteer_availability'] ) ? sanitize_textarea_field( $_POST['volunteer_availability'] ) : '';
+
+        // Basic validation
+        if ( empty( $name ) || empty( $email ) || empty( $availability ) ) {
+            $form_feedback['volunteer_error'] = 'Please fill in all required fields.';
+            return;
+        }
+        if ( ! is_email( $email ) ) {
+            $form_feedback['volunteer_error'] = 'Please provide a valid email address.';
+            return;
+        }
+
+        // Set success message
+        $form_feedback['volunteer_success'] = 'Thank you for your interest in volunteering! We have received your application.';
+
+        // Clear the form fields
+        unset($_POST['volunteer_name'], $_POST['volunteer_email'], $_POST['volunteer_availability']);
+    }
+}
+add_action( 'init', 'omnikitty_handle_volunteer_form' );
+
+/**
+ * Helper function to display form feedback.
+ * @param string $form_type 'contact' or 'volunteer'
+ */
+function display_form_feedback( $form_type ) {
+    global $form_feedback;
+    if ( isset( $form_feedback[ $form_type . '_success' ] ) ) {
+        echo '<div class="form-success" style="color: green; border: 1px solid green; padding: 10px; margin-bottom: 15px;">' . esc_html( $form_feedback[ $form_type . '_success' ] ) . '</div>';
+    } elseif ( isset( $form_feedback[ $form_type . '_error' ] ) ) {
+        echo '<div class="form-error" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">' . esc_html( $form_feedback[ $form_type . '_error' ] ) . '</div>';
+    }
+}
+
+/**
+ * Create required pages on theme activation.
+ */
+function omnikitty_child_create_form_pages() {
+    // Check if the "Contact" page exists
+    if ( null === get_page_by_title( 'Contact' ) ) {
+        wp_insert_post(
+            array(
+                'post_title'    => 'Contact',
+                'post_content'  => '',
+                'post_status'   => 'publish',
+                'post_author'   => 1,
+                'post_type'     => 'page',
+                'page_template' => 'template-contact.php',
+            )
+        );
+    }
+
+    // Check if the "Volunteer" page exists
+    if ( null === get_page_by_title( 'Volunteer' ) ) {
+        wp_insert_post(
+            array(
+                'post_title'    => 'Volunteer',
+                'post_content'  => 'Use this page to provide information about volunteering opportunities.',
+                'post_status'   => 'publish',
+                'post_author'   => 1,
+                'post_type'     => 'page',
+                'page_template' => 'template-volunteer.php',
+            )
+        );
+    }
+}
+add_action( 'after_switch_theme', 'omnikitty_child_create_form_pages' );
