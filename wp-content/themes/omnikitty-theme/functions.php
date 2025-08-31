@@ -427,3 +427,77 @@ if ( ! function_exists( 'omnikitty_post_thumbnail' ) ) :
 		endif; // End is_singular().
 	}
 endif;
+
+/**
+ * Handles the newsletter signup form submission.
+ */
+function omnikitty_handle_newsletter_signup() {
+    // Verify nonce
+    if ( ! isset( $_POST['omnikitty_newsletter_nonce'] ) || ! wp_verify_nonce( $_POST['omnikitty_newsletter_nonce'], 'omnikitty_newsletter_signup' ) ) {
+        // If nonce fails, redirect back with an error message
+        wp_safe_redirect( add_query_arg( 'newsletter_status', 'nonce_error', wp_get_referer() ) );
+        exit;
+    }
+
+    // Sanitize and validate email
+    if ( ! isset( $_POST['newsletter_email'] ) || ! is_email( $_POST['newsletter_email'] ) ) {
+        // If email is invalid, redirect back with an error message
+        wp_safe_redirect( add_query_arg( 'newsletter_status', 'email_error', wp_get_referer() ) );
+        exit;
+    }
+
+    $email = sanitize_email( $_POST['newsletter_email'] );
+
+    // For this example, we'll just set a transient to simulate success.
+    // In a real-world scenario, you would integrate with a mailing list service API here.
+    set_transient( 'omnikitty_newsletter_success', 'Thank you for subscribing!', 60 );
+
+    // Redirect back to the previous page with a success message
+    wp_safe_redirect( add_query_arg( 'newsletter_status', 'success', wp_get_referer() ) );
+    exit;
+}
+add_action( 'admin_post_nopriv_newsletter_signup', 'omnikitty_handle_newsletter_signup' );
+add_action( 'admin_post_newsletter_signup', 'omnikitty_handle_newsletter_signup' );
+
+/**
+ * Handles the adoption form submission.
+ */
+function omnikitty_handle_adoption_form() {
+    // Verify nonce
+    if ( ! isset( $_POST['omnikitty_adoption_nonce'] ) || ! wp_verify_nonce( $_POST['omnikitty_adoption_nonce'], 'omnikitty_adoption_form_nonce' ) ) {
+        wp_safe_redirect( add_query_arg( 'adoption_status', 'nonce_error', wp_get_referer() . '#adoption-form-section' ) );
+        exit;
+    }
+
+    // Check that all required fields are present
+    $required_fields = array( 'cat_id', 'adopter_name', 'adopter_email', 'adopter_message' );
+    foreach ( $required_fields as $field ) {
+        if ( empty( $_POST[ $field ] ) ) {
+            wp_safe_redirect( add_query_arg( 'adoption_status', 'field_error', wp_get_referer() . '#adoption-form-section' ) );
+            exit;
+        }
+    }
+
+    // Sanitize form data
+    $cat_id = absint( $_POST['cat_id'] );
+    $adopter_name = sanitize_text_field( $_POST['adopter_name'] );
+    $adopter_email = sanitize_email( $_POST['adopter_email'] );
+    $adopter_message = sanitize_textarea_field( $_POST['adopter_message'] );
+
+    // Validate email
+    if ( ! is_email( $adopter_email ) ) {
+        wp_safe_redirect( add_query_arg( 'adoption_status', 'email_error', wp_get_referer() . '#adoption-form-section' ) );
+        exit;
+    }
+
+    // At this point, you would typically save the application to the database or send it via email.
+    // For this example, we'll just set a transient to simulate success.
+    set_transient( 'omnikitty_adoption_success_' . $cat_id, 'Thank you for your adoption application! We will be in touch soon.', HOUR_IN_SECONDS );
+
+    // Redirect back to the cat's profile page with a success message
+    $redirect_url = add_query_arg( 'adoption_status', 'success', get_permalink( $cat_id ) );
+    wp_safe_redirect( $redirect_url );
+    exit;
+}
+add_action( 'admin_post_nopriv_adoption_form', 'omnikitty_handle_adoption_form' );
+add_action( 'admin_post_adoption_form', 'omnikitty_handle_adoption_form' );

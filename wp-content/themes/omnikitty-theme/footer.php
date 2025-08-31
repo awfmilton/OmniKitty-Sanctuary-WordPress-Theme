@@ -20,10 +20,26 @@
 		</nav>
 
 		<div class="newsletter-signup">
-			<!-- Newsletter signup form placeholder -->
 			<h4><?php esc_html_e( 'Sign up for our newsletter', 'omnikitty' ); ?></h4>
-			<form>
-				<input type="email" placeholder="Your email address">
+			<?php
+			// Display success or error messages
+			if ( isset( $_GET['newsletter_status'] ) ) {
+				$status = sanitize_key( $_GET['newsletter_status'] );
+				if ( $status === 'success' && get_transient( 'omnikitty_newsletter_success' ) ) {
+					echo '<p class="newsletter-success" style="color: green;">' . esc_html( get_transient( 'omnikitty_newsletter_success' ) ) . '</p>';
+					delete_transient( 'omnikitty_newsletter_success' );
+				} elseif ( $status === 'nonce_error' ) {
+					echo '<p class="newsletter-error" style="color: red;">' . esc_html__( 'Security check failed. Please try again.', 'omnikitty' ) . '</p>';
+				} elseif ( $status === 'email_error' ) {
+					echo '<p class="newsletter-error" style="color: red;">' . esc_html__( 'Please provide a valid email address.', 'omnikitty' ) . '</p>';
+				}
+			}
+			?>
+			<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+				<input type="hidden" name="action" value="newsletter_signup">
+				<?php wp_nonce_field( 'omnikitty_newsletter_signup', 'omnikitty_newsletter_nonce' ); ?>
+				<label for="newsletter-email" class="screen-reader-text"><?php esc_html_e( 'Email address', 'omnikitty' ); ?></label>
+				<input type="email" id="newsletter-email" name="newsletter_email" placeholder="<?php esc_attr_e( 'Your email address', 'omnikitty' ); ?>" required>
 				<button type="submit"><?php esc_html_e( 'Subscribe', 'omnikitty' ); ?></button>
 			</form>
 		</div>
