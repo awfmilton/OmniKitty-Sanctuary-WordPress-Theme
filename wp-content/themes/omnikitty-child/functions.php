@@ -222,35 +222,145 @@ function display_form_feedback( $form_type ) {
 }
 
 /**
- * Create required pages on theme activation.
+ * Sets up the theme by creating initial content, pages, and terms.
+ *
+ * This function is hooked into `after_switch_theme` and runs only once.
  */
-function omnikitty_child_create_form_pages() {
-    // Check if the "Contact" page exists
-    if ( null === get_page_by_title( 'Contact' ) ) {
-        wp_insert_post(
-            array(
-                'post_title'    => 'Contact',
-                'post_content'  => '',
-                'post_status'   => 'publish',
-                'post_author'   => 1,
-                'post_type'     => 'page',
-                'page_template' => 'template-contact.php',
-            )
-        );
+function omnikitty_child_setup_theme_content() {
+    // Check if the setup has already been run
+    if ( get_option( 'omnikitty_content_setup_done' ) ) {
+        return;
     }
 
-    // Check if the "Volunteer" page exists
-    if ( null === get_page_by_title( 'Volunteer' ) ) {
-        wp_insert_post(
-            array(
-                'post_title'    => 'Volunteer',
-                'post_content'  => 'Use this page to provide information about volunteering opportunities.',
+    // Create taxonomy terms
+    $taxonomies = array(
+        'adoption_status' => array( 'Available', 'Pending', 'Adopted' ),
+        'cat_breed'       => array( 'Domestic Shorthair', 'Siamese', 'Tabby', 'Maine Coon' ),
+    );
+
+    foreach ( $taxonomies as $taxonomy => $terms ) {
+        foreach ( $terms as $term_name ) {
+            if ( ! term_exists( $term_name, $taxonomy ) ) {
+                wp_insert_term( $term_name, $taxonomy );
+            }
+        }
+    }
+
+    // Create pages
+    $pages = array(
+        'Homepage'   => array(
+            'content'   => 'Welcome to the OmniKitty Sanctuary! Our mission is to provide a safe and caring environment for every cat.',
+            'template'  => 'front-page.php',
+        ),
+        'About Us'   => array( 'content' => 'Learn more about our history, our team, and our mission.' ),
+        'Research'   => array( 'content' => 'Discover the latest in feline research and care techniques.' ),
+        'Products'   => array( 'content' => 'Browse our selection of cat care products.' ),
+        'Donate'     => array( 'content' => 'Your generous donations help us care for our cats. Thank you for your support!' ),
+        'Volunteer'  => array(
+            'content'   => 'Join our team of dedicated volunteers and make a difference.',
+            'template'  => 'template-volunteer.php',
+        ),
+        'Contact'    => array(
+            'content'   => 'Get in touch with us for any inquiries.',
+            'template'  => 'template-contact.php',
+        ),
+    );
+
+    foreach ( $pages as $title => $data ) {
+        if ( null === get_page_by_title( $title ) ) {
+            $post_id = wp_insert_post( array(
+                'post_title'    => $title,
+                'post_content'  => $data['content'],
                 'post_status'   => 'publish',
                 'post_author'   => 1,
                 'post_type'     => 'page',
-                'page_template' => 'template-volunteer.php',
-            )
-        );
+            ) );
+
+            if ( $post_id && isset( $data['template'] ) ) {
+                update_post_meta( $post_id, '_wp_page_template', $data['template'] );
+            }
+
+            if ( 'Homepage' === $title ) {
+                update_option( 'show_on_front', 'page' );
+                update_option( 'page_on_front', $post_id );
+            }
+        }
     }
+
+    // Create sample blog posts
+    $posts = array(
+        'The Benefits of a Raw Food Diet for Cats' => 'Exploring the advantages of raw feeding for feline health.',
+        'Understanding Feline Body Language' => 'A guide to interpreting your cat\'s behavior.',
+        'Creating a Cat-Friendly Home Environment' => 'Tips for making your home a paradise for your pets.',
+    );
+
+    foreach ( $posts as $title => $content ) {
+        if ( null === get_page_by_title( $title, OBJECT, 'post' ) ) {
+            wp_insert_post( array(
+                'post_title'    => $title,
+                'post_content'  => $content,
+                'post_status'   => 'publish',
+                'post_author'   => 1,
+                'post_type'     => 'post',
+            ) );
+        }
+    }
+
+    // Create sample cats
+    $cats = array(
+        array(
+            'title'   => 'Whiskers',
+            'content' => 'A friendly and playful tabby looking for a forever home.',
+            'age'     => '2',
+            'gender'  => 'Male',
+            'needs'   => 'None',
+            'status'  => 'Available',
+            'breed'   => 'Tabby',
+        ),
+        array(
+            'title'   => 'Shadow',
+            'content' => 'A shy but sweet siamese who loves quiet afternoons.',
+            'age'     => '4',
+            'gender'  => 'Female',
+            'needs'   => 'Requires a quiet home with no other pets.',
+            'status'  => 'Available',
+            'breed'   => 'Siamese',
+        ),
+        array(
+            'title'   => 'Leo',
+            'content' => 'A majestic Maine Coon with a gentle heart.',
+            'age'     => '3',
+            'gender'  => 'Male',
+            'needs'   => 'Regular grooming to maintain his beautiful coat.',
+            'status'  => 'Pending',
+            'breed'   => 'Maine Coon',
+        ),
+    );
+
+    foreach ( $cats as $cat_data ) {
+        if ( null === get_page_by_title( $cat_data['title'], OBJECT, 'cat' ) ) {
+            $cat_id = wp_insert_post( array(
+                'post_title'    => $cat_data['title'],
+                'post_content'  => $cat_data['content'],
+                'post_status'   => 'publish',
+                'post_author'   => 1,
+                'post_type'     => 'cat',
+            ) );
+
+            if ( $cat_id ) {
+                // Assign taxonomies
+                wp_set_object_terms( $cat_id, $cat_data['status'], 'adoption_status' );
+                wp_set_object_terms( $cat_id, $cat_data['breed'], 'cat_breed' );
+
+                // Add custom fields
+                update_post_meta( $cat_id, 'age', $cat_data['age'] );
+                update_post_meta( $cat_id, 'gender', $cat_data['gender'] );
+                update_post_meta( $cat_id, 'special_needs', $cat_data['needs'] );
+            }
+        }
+    }
+
+    // Set the option to prevent this from running again
+    update_option( 'omnikitty_content_setup_done', true );
 }
-add_action( 'after_switch_theme', 'omnikitty_child_create_form_pages' );
+add_action( 'after_switch_theme', 'omnikitty_child_setup_theme_content' );
