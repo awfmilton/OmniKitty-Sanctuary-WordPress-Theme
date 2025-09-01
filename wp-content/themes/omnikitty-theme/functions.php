@@ -575,3 +575,14 @@ function omnikitty_handle_adoption_form() {
 }
 add_action( 'admin_post_nopriv_adoption_form', 'omnikitty_handle_adoption_form' );
 add_action( 'admin_post_adoption_form', 'omnikitty_handle_adoption_form' );
+
+/**
+ * Enqueue scripts and styles.
+ */
+function omnikitty_enqueue_styles() {
+	wp_enqueue_style( 'omnikitty-style', get_stylesheet_uri(), array(), wp_get_theme()->get( 'Version' ) );
+
+	// Enqueue responsive stylesheet
+	wp_enqueue_style( 'omnikitty-responsive', get_template_directory_uri() . '/responsive.css', array( 'omnikitty-style' ), wp_get_theme()->get( 'Version' ) );
+}
+add_action( 'wp_enqueue_scripts', 'omnikitty_enqueue_styles' );

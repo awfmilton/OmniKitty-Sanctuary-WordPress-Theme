@@ -1,0 +1,75 @@
+/*
+ * OmniKitty Responsive Styles
+ */
+
+/*--------------------------------------------------------------
+>>> TABLET (768px and up)
+--------------------------------------------------------------*/
+@media (max-width: 768px) {
+    /* Example: Adjust site header padding */
+    .site-header {
+        padding: 10px 20px;
+    }
+
+    /* Example: Adjust main navigation for smaller screens */
+    .main-navigation {
+        text-align: center;
+    }
+
+    .main-navigation ul {
+        display: none; /* Hide nav menu by default on smaller screens */
+        width: 100%;
+    }
+
+    .main-navigation .menu-toggle {
+        display: block; /* Show the mobile menu toggle */
+        margin: 0 auto;
+    }
+
+    .main-navigation.toggled ul {
+        display: block; /* Show the menu when toggled */
+        flex-direction: column;
+    }
+
+    /* Example: Stack grid items */
+    .cat-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for tablets */
+    }
+}
+
+/*--------------------------------------------------------------
+>>> MOBILE (600px and below)
+--------------------------------------------------------------*/
+@media (max-width: 600px) {
+    /* Example: Further adjustments for mobile */
+    .site-title {
+        font-size: 1.5em;
+    }
+
+    .site-header {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .site-branding {
+        margin-bottom: 1rem;
+    }
+
+    /* Example: Single column for grids */
+    .cat-grid, .post-grid {
+        grid-template-columns: 1fr; /* 1 column for mobile */
+    }
+
+    /* Example: Adjust form elements */
+    input[type="text"],
+    input[type="email"],
+    textarea {
+        width: 100%;
+    }
+
+    /* Example: Stack footer widgets */
+    .footer-widgets .widget {
+        flex-basis: 100%;
+        margin-bottom: 20px;
+    }
+}

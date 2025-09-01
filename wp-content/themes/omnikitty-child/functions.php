@@ -14,11 +14,14 @@ function omnikitty_child_enqueue_assets() {
 	// Enqueue parent theme stylesheet.
 	wp_enqueue_style( $parent_style, get_template_directory_uri() . '/style.css' );
 
+	// Enqueue parent theme's responsive stylesheet.
+	wp_enqueue_style( 'parent-responsive-style', get_template_directory_uri() . '/responsive.css', array( $parent_style ) );
+
 	// Enqueue child theme stylesheet.
 	wp_enqueue_style(
 		'child-style',
 		get_stylesheet_directory_uri() . '/style.css',
-		array( $parent_style ),
+		array( $parent_style, 'parent-responsive-style' ),
 		wp_get_theme()->get( 'Version' )
 	);
 
