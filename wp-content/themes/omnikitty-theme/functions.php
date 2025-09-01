@@ -418,6 +418,80 @@ if ( ! function_exists( 'omnikitty_post_thumbnail' ) ) :
 endif;
 
 /**
+ * Handles the contact form submission.
+ */
+function omnikitty_handle_contact_form() {
+    // Verify nonce
+    if ( ! isset( $_POST['contact_form_nonce'] ) || ! wp_verify_nonce( $_POST['contact_form_nonce'], 'omnikitty_contact_form_action' ) ) {
+        wp_safe_redirect( add_query_arg( 'contact_status', 'nonce_error', wp_get_referer() . '#contact-form' ) );
+        exit;
+    }
+
+    // Sanitize and validate fields
+    $contact_name = isset( $_POST['contact_name'] ) ? sanitize_text_field( $_POST['contact_name'] ) : '';
+    $contact_email = isset( $_POST['contact_email'] ) ? sanitize_email( $_POST['contact_email'] ) : '';
+    $contact_message = isset( $_POST['contact_message'] ) ? sanitize_textarea_field( $_POST['contact_message'] ) : '';
+
+    if ( empty( $contact_name ) || empty( $contact_message ) || ! is_email( $contact_email ) ) {
+        wp_safe_redirect( add_query_arg( 'contact_status', 'field_error', wp_get_referer() . '#contact-form' ) );
+        exit;
+    }
+
+    // Send an email with the form data.
+    $admin_email = get_option( 'admin_email' );
+    $subject = 'New Contact Form Submission from ' . $contact_name;
+    $headers = array('Content-Type: text/plain; charset=UTF-8', 'From: ' . $contact_name . ' <' . $contact_email . '>', 'Reply-To: ' . $contact_name . ' <' . $contact_email . '>');
+    $body = "You have received a new message from your website contact form.\n\n";
+    $body .= "Name: " . $contact_name . "\n";
+    $body .= "Email: " . $contact_email . "\n";
+    $body .= "Message:\n" . $contact_message . "\n";
+    wp_mail( $admin_email, $subject, $body, $headers );
+
+    // Redirect back with a success message
+    wp_safe_redirect( add_query_arg( 'contact_status', 'success', wp_get_referer() . '#contact-form' ) );
+    exit;
+}
+add_action( 'admin_post_nopriv_contact_form', 'omnikitty_handle_contact_form' );
+add_action( 'admin_post_contact_form', 'omnikitty_handle_contact_form' );
+
+/**
+ * Handles the volunteer form submission.
+ */
+function omnikitty_handle_volunteer_form() {
+    // Verify nonce
+    if ( ! isset( $_POST['volunteer_form_nonce'] ) || ! wp_verify_nonce( $_POST['volunteer_form_nonce'], 'omnikitty_volunteer_form_action' ) ) {
+        wp_safe_redirect( add_query_arg( 'volunteer_status', 'nonce_error', wp_get_referer() . '#volunteer-form' ) );
+        exit;
+    }
+
+    // Sanitize and validate fields
+    $volunteer_name = isset( $_POST['volunteer_name'] ) ? sanitize_text_field( $_POST['volunteer_name'] ) : '';
+    $volunteer_email = isset( $_POST['volunteer_email'] ) ? sanitize_email( $_POST['volunteer_email'] ) : '';
+    $volunteer_availability = isset( $_POST['volunteer_availability'] ) ? sanitize_textarea_field( $_POST['volunteer_availability'] ) : '';
+
+    if ( empty( $volunteer_name ) || empty( $volunteer_availability ) || ! is_email( $volunteer_email ) ) {
+        wp_safe_redirect( add_query_arg( 'volunteer_status', 'field_error', wp_get_referer() . '#volunteer-form' ) );
+        exit;
+    }
+
+    // Send an email with the form data.
+    $admin_email = get_option( 'admin_email' );
+    $subject = 'New Volunteer Application from ' . $volunteer_name;
+    $headers = array('Content-Type: text/plain; charset=UTF-8', 'From: ' . $volunteer_name . ' <' . $volunteer_email . '>', 'Reply-To: ' . $volunteer_name . ' <' . $volunteer_email . '>');
+    $body = "You have received a new volunteer application.\n\n";
+    $body .= "Name: " . $volunteer_name . "\n";
+    $body .= "Email: " . $volunteer_email . "\n";
+    $body .= "Availability:\n" . $volunteer_availability . "\n";
+    wp_mail( $admin_email, $subject, $body, $headers );
+
+    // Redirect back with a success message
+    wp_safe_redirect( add_query_arg( 'volunteer_status', 'success', wp_get_referer() . '#volunteer-form' ) );
+    exit;
+}
+add_action( 'admin_post_nopriv_volunteer_form', 'omnikitty_handle_volunteer_form' );
+add_action( 'admin_post_volunteer_form', 'omnikitty_handle_volunteer_form' );
+
+/**
  * Handles the newsletter signup form submission.
  */
 function omnikitty_handle_newsletter_signup() {
@@ -437,9 +511,13 @@ function omnikitty_handle_newsletter_signup() {
 
     $email = sanitize_email( $_POST['newsletter_email'] );
 
-    // For this example, we'll just set a transient to simulate success.
     // In a real-world scenario, you would integrate with a mailing list service API here.
-    set_transient( 'omnikitty_newsletter_success', 'Thank you for subscribing!', 60 );
+    // For now, we will just email the admin.
+    $admin_email = get_option( 'admin_email' );
+    $subject = 'New Newsletter Subscription';
+    $headers = array('Content-Type: text/plain; charset=UTF-8');
+    $body = "A new user has subscribed to the newsletter:\n\nEmail: " . $email;
+    wp_mail( $admin_email, $subject, $body, $headers );
 
     // Redirect back to the previous page with a success message
     wp_safe_redirect( add_query_arg( 'newsletter_status', 'success', wp_get_referer() ) );
@@ -479,9 +557,16 @@ function omnikitty_handle_adoption_form() {
         exit;
     }
 
-    // At this point, you would typically save the application to the database or send it via email.
-    // For this example, we'll just set a transient to simulate success.
-    set_transient( 'omnikitty_adoption_success_' . $cat_id, 'Thank you for your adoption application! We will be in touch soon.', HOUR_IN_SECONDS );
+    // At this point, you would typically save the application to the database. For now, we will email it.
+    $admin_email = get_option( 'admin_email' );
+    $cat_name = get_the_title( $cat_id );
+    $subject = 'New Adoption Application for ' . $cat_name;
+    $headers = array('Content-Type: text/plain; charset=UTF-8', 'From: ' . $adopter_name . ' <' . $adopter_email . '>', 'Reply-To: ' . $adopter_name . ' <' . $adopter_email . '>');
+    $body = "You have received a new adoption application for " . $cat_name . ".\n\n";
+    $body .= "Applicant Name: " . $adopter_name . "\n";
+    $body .= "Applicant Email: " . $adopter_email . "\n";
+    $body .= "Message:\n" . $adopter_message . "\n";
+    wp_mail( $admin_email, $subject, $body, $headers );
 
     // Redirect back to the cat's profile page with a success message
     $redirect_url = add_query_arg( 'adoption_status', 'success', get_permalink( $cat_id ) );

@@ -19,25 +19,35 @@ get_header(); ?>
 
             <div class="entry-content">
                 <?php
-                // Display feedback messages
-                display_form_feedback('volunteer');
+                // Display feedback messages from URL query parameters
+                if ( isset( $_GET['volunteer_status'] ) ) {
+                    $status = sanitize_key( $_GET['volunteer_status'] );
+                    if ( $status === 'success' ) {
+                        echo '<div class="form-success" style="color: green; border: 1px solid green; padding: 10px; margin-bottom: 15px;">Thank you for your application! We will be in touch soon.</div>';
+                    } elseif ( $status === 'field_error' ) {
+                        echo '<div class="form-error" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">Please fill in all required fields.</div>';
+                    } elseif ( $status === 'nonce_error' ) {
+                        echo '<div class="form-error" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">Security check failed. Please try again.</div>';
+                    }
+                }
                 ?>
 
-                <form action="<?php echo esc_url( get_permalink() ); ?>" method="post" id="volunteer-form">
+                <form action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" method="post" id="volunteer-form">
                     <p>
                         <label for="volunteer-name">Name <span class="required">*</span></label>
-                        <input type="text" id="volunteer-name" name="volunteer_name" value="<?php echo isset($_POST['volunteer_name']) ? esc_attr($_POST['volunteer_name']) : ''; ?>" required>
+                        <input type="text" id="volunteer-name" name="volunteer_name" required>
                     </p>
                     <p>
                         <label for="volunteer-email">Email <span class="required">*</span></label>
-                        <input type="email" id="volunteer-email" name="volunteer_email" value="<?php echo isset($_POST['volunteer_email']) ? esc_attr($_POST['volunteer_email']) : ''; ?>" required>
+                        <input type="email" id="volunteer-email" name="volunteer_email" required>
                     </p>
                     <p>
                         <label for="volunteer-availability">Availability <span class="required">*</span></label>
-                        <textarea id="volunteer-availability" name="volunteer_availability" rows="5" required><?php echo isset($_POST['volunteer_availability']) ? esc_textarea($_POST['volunteer_availability']) : ''; ?></textarea>
+                        <textarea id="volunteer-availability" name="volunteer_availability" rows="5" required></textarea>
                     </p>
                     <p>
-                        <?php wp_nonce_field( 'volunteer_form_action', 'volunteer_form_nonce' ); ?>
+                        <input type="hidden" name="action" value="volunteer_form">
+                        <?php wp_nonce_field( 'omnikitty_volunteer_form_action', 'volunteer_form_nonce' ); ?>
                         <input type="submit" name="volunteer_form_submit" value="Submit Application">
                     </p>
                 </form>
