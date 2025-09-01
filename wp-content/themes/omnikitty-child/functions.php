@@ -9,14 +9,30 @@
  * Enqueue scripts and styles.
  */
 function omnikitty_child_enqueue_assets() {
-	$parent_style_handle = 'omnikitty-style';
-	$parent_responsive_handle = 'omnikitty-responsive';
+	$parent_style_handle = 'omnikitty-style'; // Same handle as in parent theme.
+	$parent_theme_version = wp_get_theme('omnikitty-theme')->get('Version');
+
+	// Enqueue parent theme's main stylesheet.
+	wp_enqueue_style(
+		$parent_style_handle,
+		get_template_directory_uri() . '/style.css',
+		array(),
+		$parent_theme_version
+	);
+
+	// Enqueue parent theme's responsive stylesheet.
+	wp_enqueue_style(
+		'omnikitty-responsive',
+		get_template_directory_uri() . '/responsive.css',
+		array( $parent_style_handle ),
+		$parent_theme_version
+	);
 
 	// Enqueue child theme stylesheet.
 	wp_enqueue_style(
 		'omnikitty-child-style', // new handle
 		get_stylesheet_uri(), // This correctly gets the child theme's style.css URL
-		array( $parent_style_handle, $parent_responsive_handle ), // Depends on parent's handles
+		array( 'omnikitty-responsive' ), // Depends on parent's responsive styles
 		wp_get_theme()->get( 'Version' )
 	);
 

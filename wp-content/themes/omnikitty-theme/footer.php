@@ -54,7 +54,7 @@
 			<span class="sep"> | </span>
 			<?php
 				/* translators: 1: Theme name, 2: Theme author. */
-				printf( esc_html__( 'Theme: %1$s by %2$s.', 'omnikitty' ), 'OmniKitty', '<a href="https://example.com">The OmniKitty Team</a>' );
+				printf( esc_html__( 'Theme: %1$s by %2$s.', 'omnikitty' ), 'OmniKitty', '<a href="' . esc_url( 'https://example.com' ) . '">The OmniKitty Team</a>' );
 			?>
 		</div><!-- .site-info -->
 	</footer><!-- #colophon -->
