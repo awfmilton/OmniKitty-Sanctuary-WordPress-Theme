@@ -9,19 +9,14 @@
  * Enqueue scripts and styles.
  */
 function omnikitty_child_enqueue_assets() {
-	$parent_style = 'parent-style';
-
-	// Enqueue parent theme stylesheet.
-	wp_enqueue_style( $parent_style, get_template_directory_uri() . '/style.css' );
-
-	// Enqueue parent theme's responsive stylesheet.
-	wp_enqueue_style( 'parent-responsive-style', get_template_directory_uri() . '/responsive.css', array( $parent_style ) );
+	$parent_style_handle = 'omnikitty-style';
+	$parent_responsive_handle = 'omnikitty-responsive';
 
 	// Enqueue child theme stylesheet.
 	wp_enqueue_style(
-		'child-style',
-		get_stylesheet_directory_uri() . '/style.css',
-		array( $parent_style, 'parent-responsive-style' ),
+		'omnikitty-child-style', // new handle
+		get_stylesheet_uri(), // This correctly gets the child theme's style.css URL
+		array( $parent_style_handle, $parent_responsive_handle ), // Depends on parent's handles
 		wp_get_theme()->get( 'Version' )
 	);
 
@@ -46,7 +41,7 @@ function omnikitty_child_enqueue_assets() {
 		)
 	);
 }
-add_action( 'wp_enqueue_scripts', 'omnikitty_child_enqueue_assets' );
+add_action( 'wp_enqueue_scripts', 'omnikitty_child_enqueue_assets', 20 );
 
 /**
  * AJAX handler for filtering cats.
