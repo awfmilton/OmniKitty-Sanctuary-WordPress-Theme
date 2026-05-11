@@ -893,6 +893,10 @@ function omnikitty_get_cat_callback( $input ) {
         return new WP_Error( 'omnikitty_cat_not_found', __( 'Cat not found.', 'omnikitty' ), array( 'status' => 404 ) );
     }
 
+    if ( ! current_user_can( 'read_post', $post->ID ) ) {
+        return new WP_Error( 'omnikitty_forbidden', __( 'You do not have permission to read this cat profile.', 'omnikitty' ), array( 'status' => 403 ) );
+    }
+
     return array(
         'id'                     => $post->ID,
         'title'                  => $post->post_title,
@@ -926,6 +930,9 @@ function omnikitty_upsert_cat_callback( $input ) {
         ) );
         if ( ! empty( $posts ) ) {
             $post_id = $posts[0]->ID;
+            if ( ! current_user_can( 'edit_post', $post_id ) ) {
+                return new WP_Error( 'omnikitty_forbidden', __( 'You do not have permission to edit this cat profile.', 'omnikitty' ), array( 'status' => 403 ) );
+            }
         }
     }
 
@@ -940,6 +947,9 @@ function omnikitty_upsert_cat_callback( $input ) {
         $post_data['post_content'] = wp_kses_post( $input['content'] );
     }
     if ( isset( $input['post_status'] ) ) {
+        if ( 'publish' === $input['post_status'] && ! current_user_can( 'publish_pages' ) ) {
+            return new WP_Error( 'omnikitty_forbidden', __( 'You do not have permission to publish cat profiles.', 'omnikitty' ), array( 'status' => 403 ) );
+        }
         $post_data['post_status'] = $input['post_status'];
     }
 
@@ -951,7 +961,7 @@ function omnikitty_upsert_cat_callback( $input ) {
             return new WP_Error( 'omnikitty_missing_title', __( 'Title is required for new cats.', 'omnikitty' ) );
         }
         if ( ! isset( $post_data['post_status'] ) ) {
-            $post_data['post_status'] = 'publish';
+            $post_data['post_status'] = current_user_can( 'publish_pages' ) ? 'publish' : 'draft';
         }
         $post_id = wp_insert_post( $post_data, true );
     }
@@ -997,13 +1007,19 @@ function omnikitty_upsert_cat_callback( $input ) {
                     $tax_obj = get_taxonomy( $taxonomy );
                     if ( current_user_can( $tax_obj->cap->edit_terms ) ) {
                         $new_term = wp_insert_term( $term_val, $taxonomy );
-                        if ( ! is_wp_error( $new_term ) ) {
-                            $term_ids[] = $new_term['term_id'];
+                        if ( is_wp_error( $new_term ) ) {
+                            return $new_term;
                         }
+                        $term_ids[] = $new_term['term_id'];
+                    } else {
+                        return new WP_Error( 'omnikitty_forbidden', sprintf( __( 'You do not have permission to create terms in %s.', 'omnikitty' ), $taxonomy ) );
                     }
                 }
             }
-            wp_set_object_terms( $post_id, $term_ids, $taxonomy );
+            $result = wp_set_object_terms( $post_id, $term_ids, $taxonomy );
+            if ( is_wp_error( $result ) ) {
+                return $result;
+            }
         }
     }
 
