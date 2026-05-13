@@ -298,6 +298,13 @@ function omnikitty_register_cat_meta() {
     );
 
     foreach ( $meta_keys as $key => $type ) {
+        $sanitize_callback = 'sanitize_text_field';
+        if ( 'integer' === $type ) {
+            $sanitize_callback = 'absint';
+        } elseif ( '_cat_special_needs' === $key ) {
+            $sanitize_callback = 'sanitize_textarea_field';
+        }
+
         register_post_meta(
             'cat',
             $key,
@@ -305,7 +312,7 @@ function omnikitty_register_cat_meta() {
                 'show_in_rest'      => true,
                 'single'            => true,
                 'type'              => $type,
-                'sanitize_callback' => ( 'integer' === $type ) ? 'absint' : 'sanitize_text_field',
+                'sanitize_callback' => $sanitize_callback,
                 'auth_callback'     => function( $allowed, $meta_key, $post_id ) {
                     return current_user_can( 'edit_post', $post_id );
                 },
