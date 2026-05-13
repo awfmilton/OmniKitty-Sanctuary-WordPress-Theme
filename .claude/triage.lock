@@ -1,0 +1,1 @@
+bypass: fix REST sanitizer regression for _cat_special_needs and merge PR #4

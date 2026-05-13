@@ -50,9 +50,30 @@ if ( ! function_exists( 'omnikitty_setup' ) ) :
 				'footer'  => esc_html__( 'Footer Menu', 'omnikitty' ),
 			)
 		);
+
+		// Add WooCommerce support.
+		add_theme_support( 'woocommerce' );
+		add_theme_support( 'wc-product-gallery-zoom' );
+		add_theme_support( 'wc-product-gallery-lightbox' );
+		add_theme_support( 'wc-product-gallery-slider' );
 	}
 endif;
 add_action( 'after_setup_theme', 'omnikitty_setup' );
+
+/**
+ * Filter to include OmniKitty abilities in the WooCommerce MCP server.
+ *
+ * @param bool   $include    Whether to include the ability.
+ * @param string $ability_id The ID of the ability.
+ * @return bool
+ */
+function omnikitty_woocommerce_mcp_include_ability( $include, $ability_id ) {
+	if ( 0 === strpos( $ability_id, 'omnikitty/' ) ) {
+		return true;
+	}
+	return $include;
+}
+add_filter( 'woocommerce_mcp_include_ability', 'omnikitty_woocommerce_mcp_include_ability', 10, 2 );
 
 /**
  * Register "Cat" Custom Post Type
@@ -105,6 +126,7 @@ function omnikitty_register_cat_cpt() {
         'publicly_queryable'    => true,
         'capability_type'       => 'page',
         'rewrite'               => array( 'slug' => 'adopt' ),
+        'show_in_rest'          => true,
     );
     register_post_type( 'cat', $args );
 }
@@ -135,6 +157,7 @@ function omnikitty_register_taxonomies() {
         'show_admin_column' => true,
         'query_var'         => true,
         'rewrite'           => array( 'slug' => 'adoption-status' ),
+        'show_in_rest'      => true,
     );
     register_taxonomy( 'adoption_status', array( 'cat' ), $status_args );
 
@@ -165,6 +188,7 @@ function omnikitty_register_taxonomies() {
         'update_count_callback' => '_update_post_term_count',
         'query_var'             => true,
         'rewrite'               => array( 'slug' => 'breed' ),
+        'show_in_rest'          => true,
     );
     register_taxonomy( 'cat_breed', 'cat', $breed_args );
 }
@@ -261,6 +285,42 @@ function omnikitty_save_cat_details_data( $post_id ) {
     }
 }
 add_action( 'save_post_cat', 'omnikitty_save_cat_details_data' );
+
+/**
+ * Register custom meta for the "Cat" CPT to be available in REST API and MCP.
+ */
+function omnikitty_register_cat_meta() {
+    $meta_keys = array(
+        '_cat_age'                  => 'string',
+        '_cat_gender'               => 'string',
+        '_cat_special_needs'        => 'string',
+        '_cat_woocommerce_product_id' => 'integer',
+    );
+
+    foreach ( $meta_keys as $key => $type ) {
+        $sanitize_callback = 'sanitize_text_field';
+        if ( 'integer' === $type ) {
+            $sanitize_callback = 'absint';
+        } elseif ( '_cat_special_needs' === $key ) {
+            $sanitize_callback = 'sanitize_textarea_field';
+        }
+
+        register_post_meta(
+            'cat',
+            $key,
+            array(
+                'show_in_rest'      => true,
+                'single'            => true,
+                'type'              => $type,
+                'sanitize_callback' => $sanitize_callback,
+                'auth_callback'     => function( $allowed, $meta_key, $post_id ) {
+                    return current_user_can( 'edit_post', $post_id );
+                },
+            )
+        );
+    }
+}
+add_action( 'init', 'omnikitty_register_cat_meta' );
 
 /**
  * Register widget area.
@@ -586,3 +646,422 @@ function omnikitty_enqueue_styles() {
 	wp_enqueue_style( 'omnikitty-responsive', get_template_directory_uri() . '/responsive.css', array( 'omnikitty-style' ), wp_get_theme()->get( 'Version' ) );
 }
 add_action( 'wp_enqueue_scripts', 'omnikitty_enqueue_styles' );
+
+/**
+ * Abilities API Support for OmniKitty
+ */
+if ( function_exists( 'wp_register_ability' ) ) {
+
+    /**
+     * Register OmniKitty ability category.
+     */
+    function omnikitty_register_ability_category() {
+        wp_register_ability_category(
+            'omnikitty',
+            array(
+                'label'       => __( 'OmniKitty', 'omnikitty' ),
+                'description' => __( 'Abilities for managing cat profiles in OmniKitty.', 'omnikitty' ),
+            )
+        );
+    }
+    add_action( 'wp_abilities_api_categories_init', 'omnikitty_register_ability_category' );
+
+
+    /**
+     * Register OmniKitty abilities.
+     */
+    function omnikitty_register_abilities() {
+        // omnikitty/list-cats
+        wp_register_ability(
+            'omnikitty/list-cats',
+            array(
+                'label'               => __( 'List Cats', 'omnikitty' ),
+                'description'         => __( 'Retrieve a list of cats with optional filters for adoption status, breed, and search text.', 'omnikitty' ),
+                'category'            => 'omnikitty',
+                'input_schema'        => array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'adoption_status' => array(
+                            'type'        => 'string',
+                            'description' => __( 'Filter by adoption status slug.', 'omnikitty' ),
+                        ),
+                        'breed'           => array(
+                            'type'        => 'string',
+                            'description' => __( 'Filter by cat breed slug.', 'omnikitty' ),
+                        ),
+                        'search'          => array(
+                            'type'        => 'string',
+                            'description' => __( 'Search text.', 'omnikitty' ),
+                        ),
+                        'per_page'        => array(
+                            'type'        => 'integer',
+                            'default'     => 10,
+                            'description' => __( 'Number of results per page.', 'omnikitty' ),
+                        ),
+                    ),
+                ),
+                'output_schema'       => array(
+                    'type'  => 'array',
+                    'items' => array(
+                        'type'       => 'object',
+                        'properties' => array(
+                            'id'              => array( 'type' => 'integer' ),
+                            'title'           => array( 'type' => 'string' ),
+                            'slug'            => array( 'type' => 'string' ),
+                            'permalink'       => array( 'type' => 'string' ),
+                            'adoption_status' => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                            'breed'           => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                        ),
+                    ),
+                ),
+                'execute_callback'    => 'omnikitty_list_cats_callback',
+                'permission_callback' => function () {
+                    return current_user_can( 'read' );
+                },
+                'meta'                => array(
+                    'show_in_rest' => true,
+                    'mcp'          => array(
+                        'public' => true,
+                    ),
+                ),
+            )
+        );
+
+        // omnikitty/get-cat
+        wp_register_ability(
+            'omnikitty/get-cat',
+            array(
+                'label'               => __( 'Get Cat', 'omnikitty' ),
+                'description'         => __( 'Retrieve detailed information for a single cat by ID or slug.', 'omnikitty' ),
+                'category'            => 'omnikitty',
+                'input_schema'        => array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'id'   => array( 'type' => 'integer' ),
+                        'slug' => array( 'type' => 'string' ),
+                    ),
+                ),
+                'output_schema'       => array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'id'                         => array( 'type' => 'integer' ),
+                        'title'                      => array( 'type' => 'string' ),
+                        'content'                    => array( 'type' => 'string' ),
+                        'slug'                       => array( 'type' => 'string' ),
+                        'permalink'                  => array( 'type' => 'string' ),
+                        'status'                     => array( 'type' => 'string' ),
+                        'adoption_status'            => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                        'breed'                      => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                        'age'                        => array( 'type' => 'string' ),
+                        'gender'                     => array( 'type' => 'string' ),
+                        'special_needs'              => array( 'type' => 'string' ),
+                        'featured_media_id'          => array( 'type' => 'integer' ),
+                        'woocommerce_product_id'     => array( 'type' => 'integer' ),
+                    ),
+                ),
+                'execute_callback'    => 'omnikitty_get_cat_callback',
+                'permission_callback' => function () {
+                    return current_user_can( 'read' );
+                },
+                'meta'                => array(
+                    'show_in_rest' => true,
+                    'mcp'          => array(
+                        'public' => true,
+                    ),
+                ),
+            )
+        );
+
+        // omnikitty/upsert-cat
+        wp_register_ability(
+            'omnikitty/upsert-cat',
+            array(
+                'label'               => __( 'Upsert Cat', 'omnikitty' ),
+                'description'         => __( 'Create or update a cat profile.', 'omnikitty' ),
+                'category'            => 'omnikitty',
+                'input_schema'        => array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'id'                     => array( 'type' => 'integer' ),
+                        'slug'                   => array( 'type' => 'string' ),
+                        'title'                  => array( 'type' => 'string' ),
+                        'content'                => array( 'type' => 'string' ),
+                        'post_status'            => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending', 'private' ) ),
+                        'adoption_status'        => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                        'breed'                  => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+                        'age'                    => array( 'type' => 'string' ),
+                        'gender'                 => array( 'type' => 'string', 'enum' => array( 'Male', 'Female' ) ),
+                        'special_needs'          => array( 'type' => 'string' ),
+                        'featured_media_id'      => array( 'type' => 'integer' ),
+                        'woocommerce_product_id' => array( 'type' => 'integer' ),
+                    ),
+                ),
+                'output_schema'       => array(
+                    'type'       => 'object',
+                    'properties' => array(
+                        'id'        => array( 'type' => 'integer' ),
+                        'title'     => array( 'type' => 'string' ),
+                        'edit_link' => array( 'type' => 'string' ),
+                        'permalink'         => array( 'type' => 'string' ),
+                        'featured_media_id' => array( 'type' => 'integer' ),
+                        'meta'              => array( 'type' => 'object' ),
+                        'terms'             => array( 'type' => 'object' ),
+                    ),
+                ),
+                'execute_callback'    => 'omnikitty_upsert_cat_callback',
+                'permission_callback' => function ( $input ) {
+                    if ( ! empty( $input['id'] ) ) {
+                        return current_user_can( 'edit_post', $input['id'] );
+                    }
+                    return current_user_can( 'edit_pages' ); // CPT 'cat' uses 'page' capability type.
+                },
+                'meta'                => array(
+                    'show_in_rest' => true,
+                    'mcp'          => array(
+                        'public' => true,
+                    ),
+                ),
+            )
+        );
+    }
+    add_action( 'wp_abilities_api_init', 'omnikitty_register_abilities' );
+}
+
+/**
+ * Callback for omnikitty/list-cats ability.
+ */
+function omnikitty_list_cats_callback( $input ) {
+    $args = array(
+        'post_type'      => 'cat',
+        'posts_per_page' => isset( $input['per_page'] ) ? $input['per_page'] : 10,
+        's'              => isset( $input['search'] ) ? $input['search'] : '',
+    );
+
+    $tax_query = array();
+    if ( ! empty( $input['adoption_status'] ) ) {
+        $tax_query[] = array(
+            'taxonomy' => 'adoption_status',
+            'field'    => 'slug',
+            'terms'    => $input['adoption_status'],
+        );
+    }
+    if ( ! empty( $input['breed'] ) ) {
+        $tax_query[] = array(
+            'taxonomy' => 'cat_breed',
+            'field'    => 'slug',
+            'terms'    => $input['breed'],
+        );
+    }
+
+    if ( ! empty( $tax_query ) ) {
+        $args['tax_query'] = $tax_query;
+    }
+
+    $query = new WP_Query( $args );
+    $cats = array();
+
+    if ( $query->have_posts() ) {
+        while ( $query->have_posts() ) {
+            $query->the_post();
+            $cats[] = array(
+                'id'              => get_the_ID(),
+                'title'           => get_the_title(),
+                'slug'            => get_post_field( 'post_name', get_the_ID() ),
+                'permalink'       => get_permalink(),
+                'adoption_status' => wp_get_post_terms( get_the_ID(), 'adoption_status', array( 'fields' => 'names' ) ),
+                'breed'           => wp_get_post_terms( get_the_ID(), 'cat_breed', array( 'fields' => 'names' ) ),
+            );
+        }
+        wp_reset_postdata();
+    }
+
+    return $cats;
+}
+
+/**
+ * Callback for omnikitty/get-cat ability.
+ */
+function omnikitty_get_cat_callback( $input ) {
+    $post = null;
+    if ( ! empty( $input['id'] ) ) {
+        $post = get_post( $input['id'] );
+    } elseif ( ! empty( $input['slug'] ) ) {
+        $posts = get_posts( array(
+            'name'           => $input['slug'],
+            'post_type'      => 'cat',
+            'posts_per_page' => 1,
+        ) );
+        if ( ! empty( $posts ) ) {
+            $post = $posts[0];
+        }
+    }
+
+    if ( ! $post || 'cat' !== $post->post_type ) {
+        return new WP_Error( 'omnikitty_cat_not_found', __( 'Cat not found.', 'omnikitty' ), array( 'status' => 404 ) );
+    }
+
+    if ( ! current_user_can( 'read_post', $post->ID ) ) {
+        return new WP_Error( 'omnikitty_forbidden', __( 'You do not have permission to read this cat profile.', 'omnikitty' ), array( 'status' => 403 ) );
+    }
+
+    return array(
+        'id'                     => $post->ID,
+        'title'                  => $post->post_title,
+        'content'                => $post->post_content,
+        'slug'                   => $post->post_name,
+        'permalink'              => get_permalink( $post->ID ),
+        'status'                 => $post->post_status,
+        'adoption_status'        => wp_get_post_terms( $post->ID, 'adoption_status', array( 'fields' => 'names' ) ),
+        'breed'                  => wp_get_post_terms( $post->ID, 'cat_breed', array( 'fields' => 'names' ) ),
+        'age'                    => get_post_meta( $post->ID, '_cat_age', true ),
+        'gender'                 => get_post_meta( $post->ID, '_cat_gender', true ),
+        'special_needs'          => get_post_meta( $post->ID, '_cat_special_needs', true ),
+        'featured_media_id'      => (int) get_post_thumbnail_id( $post->ID ),
+        'woocommerce_product_id' => (int) get_post_meta( $post->ID, '_cat_woocommerce_product_id', true ),
+    );
+}
+
+/**
+ * Callback for omnikitty/upsert-cat ability.
+ */
+function omnikitty_upsert_cat_callback( $input ) {
+    $post_id = 0;
+    if ( ! empty( $input['id'] ) ) {
+        $post_id = (int) $input['id'];
+    } elseif ( ! empty( $input['slug'] ) ) {
+        $posts = get_posts( array(
+            'name'           => $input['slug'],
+            'post_type'      => 'cat',
+            'posts_per_page' => 1,
+            'post_status'    => 'any',
+        ) );
+        if ( ! empty( $posts ) ) {
+            $post_id = $posts[0]->ID;
+            if ( ! current_user_can( 'edit_post', $post_id ) ) {
+                return new WP_Error( 'omnikitty_forbidden', __( 'You do not have permission to edit this cat profile.', 'omnikitty' ), array( 'status' => 403 ) );
+            }
+        }
+    }
+
+    $post_data = array(
+        'post_type'   => 'cat',
+    );
+
+    if ( isset( $input['title'] ) ) {
+        $post_data['post_title'] = sanitize_text_field( $input['title'] );
+    }
+    if ( isset( $input['content'] ) ) {
+        $post_data['post_content'] = wp_kses_post( $input['content'] );
+    }
+    if ( isset( $input['post_status'] ) ) {
+        if ( 'publish' === $input['post_status'] && ! current_user_can( 'publish_pages' ) ) {
+            return new WP_Error( 'omnikitty_forbidden', __( 'You do not have permission to publish cat profiles.', 'omnikitty' ), array( 'status' => 403 ) );
+        }
+        $post_data['post_status'] = $input['post_status'];
+    }
+
+    if ( $post_id ) {
+        $post_data['ID'] = $post_id;
+        $post_id = wp_update_post( $post_data, true );
+    } else {
+        if ( empty( $post_data['post_title'] ) ) {
+            return new WP_Error( 'omnikitty_missing_title', __( 'Title is required for new cats.', 'omnikitty' ) );
+        }
+        if ( ! isset( $post_data['post_status'] ) ) {
+            $post_data['post_status'] = current_user_can( 'publish_pages' ) ? 'publish' : 'draft';
+        }
+        $post_id = wp_insert_post( $post_data, true );
+    }
+
+    if ( is_wp_error( $post_id ) ) {
+        return $post_id;
+    }
+
+    // Handle Featured Media
+    if ( isset( $input['featured_media_id'] ) ) {
+        $media_id = (int) $input['featured_media_id'];
+        if ( wp_attachment_is_image( $media_id ) ) {
+            set_post_thumbnail( $post_id, $media_id );
+        } else {
+            return new WP_Error( 'omnikitty_invalid_media', __( 'Invalid featured media ID.', 'omnikitty' ) );
+        }
+    }
+
+    // Handle Taxonomies
+    $taxonomies = array(
+        'adoption_status' => isset( $input['adoption_status'] ) ? $input['adoption_status'] : null,
+        'cat_breed'       => isset( $input['breed'] ) ? $input['breed'] : null,
+    );
+
+    foreach ( $taxonomies as $taxonomy => $terms ) {
+        if ( null !== $terms ) {
+            $term_ids = array();
+            foreach ( (array) $terms as $term_val ) {
+                $term = null;
+                if ( is_numeric( $term_val ) ) {
+                    $term = get_term( (int) $term_val, $taxonomy );
+                    if ( ! $term || is_wp_error( $term ) ) {
+                        return new WP_Error( 'omnikitty_invalid_term', sprintf( __( 'Invalid term ID %d for taxonomy %s.', 'omnikitty' ), (int) $term_val, $taxonomy ) );
+                    }
+                } else {
+                    $term = get_term_by( 'slug', $term_val, $taxonomy );
+                    if ( ! $term || is_wp_error( $term ) ) {
+                        $term = get_term_by( 'name', $term_val, $taxonomy );
+                    }
+                }
+
+                if ( $term && ! is_wp_error( $term ) ) {
+                    $term_ids[] = $term->term_id;
+                } else {
+                    // Try to create term if user has capability
+                    $tax_obj = get_taxonomy( $taxonomy );
+                    if ( current_user_can( $tax_obj->cap->edit_terms ) ) {
+                        $new_term = wp_insert_term( $term_val, $taxonomy );
+                        if ( is_wp_error( $new_term ) ) {
+                            return $new_term;
+                        }
+                        $term_ids[] = $new_term['term_id'];
+                    } else {
+                        return new WP_Error( 'omnikitty_forbidden', sprintf( __( 'You do not have permission to create terms in %s.', 'omnikitty' ), $taxonomy ) );
+                    }
+                }
+            }
+            $result = wp_set_object_terms( $post_id, $term_ids, $taxonomy );
+            if ( is_wp_error( $result ) ) {
+                return $result;
+            }
+        }
+    }
+
+    // Handle Meta
+    if ( isset( $input['age'] ) ) {
+        update_post_meta( $post_id, '_cat_age', sanitize_text_field( $input['age'] ) );
+    }
+    if ( isset( $input['gender'] ) ) {
+        update_post_meta( $post_id, '_cat_gender', sanitize_text_field( $input['gender'] ) );
+    }
+    if ( isset( $input['special_needs'] ) ) {
+        update_post_meta( $post_id, '_cat_special_needs', sanitize_textarea_field( $input['special_needs'] ) );
+    }
+    if ( isset( $input['woocommerce_product_id'] ) ) {
+        update_post_meta( $post_id, '_cat_woocommerce_product_id', absint( $input['woocommerce_product_id'] ) );
+    }
+
+    return array(
+        'id'                => $post_id,
+        'title'             => get_the_title( $post_id ),
+        'edit_link'         => get_edit_post_link( $post_id, 'raw' ),
+        'permalink'         => get_permalink( $post_id ),
+        'featured_media_id' => (int) get_post_thumbnail_id( $post_id ),
+        'meta'              => array(
+            'age'                    => get_post_meta( $post_id, '_cat_age', true ),
+            'gender'                 => get_post_meta( $post_id, '_cat_gender', true ),
+            'special_needs'          => get_post_meta( $post_id, '_cat_special_needs', true ),
+            'woocommerce_product_id' => (int) get_post_meta( $post_id, '_cat_woocommerce_product_id', true ),
+        ),
+        'terms'     => array(
+            'adoption_status' => wp_get_post_terms( $post_id, 'adoption_status', array( 'fields' => 'names' ) ),
+            'breed'           => wp_get_post_terms( $post_id, 'cat_breed', array( 'fields' => 'names' ) ),
+        ),
+    );
+}

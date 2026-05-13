@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-05-11T15:55:47.797Z",
+  "files": [
+    {
+      "path": "wp-content/themes/omnikitty-child/js/child-theme.js",
+      "symbols": [
+        {
+          "type": "function",
+          "name": "performAjaxRequest",
+          "line": 10
+        }
+      ],
+      "imports": [],
+      "exports": [],
+      "routes": []
+    },
+    {
+      "path": "wp-content/themes/omnikitty-child/js/child-theme.min.js",
+      "symbols": [
+        {
+          "type": "function",
+          "name": "a",
+          "line": 1
+        }
+      ],
+      "imports": [],
+      "exports": [],
+      "routes": []
+    }
+  ],
+  "callSites": [],
+  "layout": {
+    "wp-content/themes/omnikitty-child/js/child-theme.js": {
+      "x": 308,
+      "y": 289
+    },
+    "wp-content/themes/omnikitty-child/js/child-theme.min.js": {
+      "x": 369,
+      "y": 191
+    }
+  }
+}

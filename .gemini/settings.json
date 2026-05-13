@@ -1,0 +1,74 @@
+{
+  "mcpServers": {
+    "mysql-benborla": {
+      "name": "MySQL Database",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@benborla29/mcp-server-mysql"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "github-official": {
+      "name": "GitHub",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "playwright": {
+      "name": "Playwright Browser",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "name": "Chrome DevTools",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--browserUrl",
+        "{{BROWSER_URL}}"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "filesystem-official": {
+      "name": "Filesystem",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "{{ALLOWED_DIR}}"
+      ],
+      "env": {},
+      "enabled": true
+    },
+    "wordpress": {
+      "name": "WordPress",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@jeremypress/mcp-wordpress"
+      ],
+      "env": {},
+      "enabled": true
+    }
+  },
+  "allow": [
+    "ls",
+    "cat",
+    "grep",
+    "git status",
+    "git diff"
+  ]
+}
