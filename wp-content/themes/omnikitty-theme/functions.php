@@ -993,14 +993,17 @@ function omnikitty_upsert_cat_callback( $input ) {
                 $term = null;
                 if ( is_numeric( $term_val ) ) {
                     $term = get_term( (int) $term_val, $taxonomy );
+                    if ( ! $term || is_wp_error( $term ) ) {
+                        return new WP_Error( 'omnikitty_invalid_term', sprintf( __( 'Invalid term ID %d for taxonomy %s.', 'omnikitty' ), (int) $term_val, $taxonomy ) );
+                    }
                 } else {
                     $term = get_term_by( 'slug', $term_val, $taxonomy );
-                    if ( ! $term ) {
+                    if ( ! $term || is_wp_error( $term ) ) {
                         $term = get_term_by( 'name', $term_val, $taxonomy );
                     }
                 }
 
-                if ( $term ) {
+                if ( $term && ! is_wp_error( $term ) ) {
                     $term_ids[] = $term->term_id;
                 } else {
                     // Try to create term if user has capability
