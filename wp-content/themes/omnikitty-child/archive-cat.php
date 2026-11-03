@@ -19,9 +19,11 @@ get_header(); ?>
                         <select name="adoption_status_filter" id="adoption_status_filter">
                             <option value=""><?php _e('All Statuses', 'omnikitty-child'); ?></option>
                             <?php
-                            $terms = get_terms(array('taxonomy' => 'adoption_status', 'hide_empty' => false));
-                            foreach ($terms as $term) {
-                                echo '<option value="' . esc_attr($term->slug) . '">' . esc_html($term->name) . '</option>';
+                            $terms = get_terms( array( 'taxonomy' => 'adoption_status', 'hide_empty' => false ) );
+                            if ( ! is_wp_error( $terms ) ) {
+                                foreach ( $terms as $term ) {
+                                    echo '<option value="' . esc_attr( $term->slug ) . '">' . esc_html( $term->name ) . '</option>';
+                                }
                             }
                             ?>
                         </select>
@@ -31,9 +33,11 @@ get_header(); ?>
                         <select name="cat_breed_filter" id="cat_breed_filter">
                             <option value=""><?php _e('All Breeds', 'omnikitty-child'); ?></option>
                             <?php
-                            $terms = get_terms(array('taxonomy' => 'cat_breed', 'hide_empty' => false));
-                            foreach ($terms as $term) {
-                                echo '<option value="' . esc_attr($term->slug) . '">' . esc_html($term->name) . '</option>';
+                            $terms = get_terms( array( 'taxonomy' => 'cat_breed', 'hide_empty' => false ) );
+                            if ( ! is_wp_error( $terms ) ) {
+                                foreach ( $terms as $term ) {
+                                    echo '<option value="' . esc_attr( $term->slug ) . '">' . esc_html( $term->name ) . '</option>';
+                                }
                             }
                             ?>
                         </select>

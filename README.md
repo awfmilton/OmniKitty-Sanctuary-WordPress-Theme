@@ -213,3 +213,11 @@ omnikitty-wordpress/
             └── js/
                 └── child-theme.js
 ```
+
+## 🗺️ Roadmap & Planned Features
+
+See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full 12-phase implementation record and upcoming Phase 13–16 roadmap (Foster Network Portal, Veterinary Medical Records Tracker, Sponsor-a-Cat Recurring Donations, and AI Bioacoustics Audio Visualizer).
+
+## 📄 License
+
+Mozilla Public License 2.0 (MPL-2.0). Copyright (c) Alexander Milton. See [LICENSE](LICENSE).

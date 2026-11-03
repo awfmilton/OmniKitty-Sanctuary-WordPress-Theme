@@ -72,7 +72,10 @@ get_header(); ?>
 
             </article><!-- #post-<?php the_ID(); ?> -->
 
-        <?php endwhile; // End of the loop. ?>
+        <?php
+        $current_cat_id = get_the_ID();
+        endwhile; // End of the loop.
+        ?>
 
     </main><!-- #main -->
 </div><!-- #primary -->
@@ -83,17 +86,18 @@ get_header(); ?>
     if ( isset( $_GET['adoption_status'] ) ) {
         $status = sanitize_key( $_GET['adoption_status'] );
 
-        if ( $status === 'success' && get_transient( 'omnikitty_adoption_success_' . get_the_ID() ) ) {
+        if ( $status === 'success' && get_transient( 'omnikitty_adoption_success_' . $current_cat_id ) ) {
             echo '<div class="adoption-notice success-notice" style="color: green; border: 1px solid green; padding: 15px; margin-bottom: 20px;">';
             echo '<strong>' . esc_html__( 'Success!', 'omnikitty-child' ) . '</strong><br>';
-            echo esc_html( get_transient( 'omnikitty_adoption_success_' . get_the_ID() ) );
+            echo esc_html( get_transient( 'omnikitty_adoption_success_' . $current_cat_id ) );
             echo '</div>';
-            delete_transient( 'omnikitty_adoption_success_' . get_the_ID() );
+            delete_transient( 'omnikitty_adoption_success_' . $current_cat_id );
         } else {
             $error_messages = array(
                 'nonce_error' => __( 'Security check failed. Please try again.', 'omnikitty-child' ),
                 'field_error' => __( 'Please fill out all required fields.', 'omnikitty-child' ),
                 'email_error' => __( 'Please provide a valid email address.', 'omnikitty-child' ),
+                'mail_error'  => __( 'There was a problem sending your application. Please try again or contact us directly.', 'omnikitty-child' ),
             );
             if ( array_key_exists( $status, $error_messages ) ) {
                 echo '<div class="adoption-notice error-notice" style="color: red; border: 1px solid red; padding: 15px; margin-bottom: 20px;">';
@@ -110,7 +114,7 @@ get_header(); ?>
         <p><?php esc_html_e( 'Fill out the form below to start the adoption process.', 'omnikitty-child' ); ?></p>
 
         <input type="hidden" name="action" value="adoption_form">
-        <input type="hidden" name="cat_id" value="<?php echo esc_attr( get_the_ID() ); ?>">
+        <input type="hidden" name="cat_id" value="<?php echo esc_attr( $current_cat_id ); ?>">
         <?php wp_nonce_field( 'omnikitty_adoption_form_nonce', 'omnikitty_adoption_nonce' ); ?>
 
         <p>

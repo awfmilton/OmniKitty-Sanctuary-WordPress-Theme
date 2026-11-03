@@ -54,7 +54,7 @@ CHANGE_LOG (last 10 updates — read only when researching past changes to this 
   v1.0.0 | 2026-04-11 | ab7a45c | Initial AGENTS.md — Sentinel, critical rules, quick reference
 -->
 # AGENTS.md — MCP Config Manager
-<!-- Author: Alexander Milton / tbay.tk LLC, Helena, Montana | Contact: alex@tbay.tk | https://tbay.tk -->
+<!-- Author: Alexander Milton <awfmilton@gmail.com> | https://github.com/awfmilton -->
 
 **This file is for AI agents and automated tools.**
 

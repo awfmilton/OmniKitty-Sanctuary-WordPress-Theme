@@ -85,7 +85,7 @@ function omnikitty_filter_cats_handler() {
 
     $args = array(
         'post_type' => 'cat',
-        'posts_per_page' => -1,
+        'posts_per_page' => 50,
         'tax_query' => $tax_query,
     );
 
@@ -103,7 +103,7 @@ function omnikitty_filter_cats_handler() {
                         </div>
                     <?php endif; ?>
                     <div class="cat-card-content">
-                        <h2 class="cat-card-title"><?php the_title(); ?></h2>
+                        <h2 class="cat-card-title"><?php echo esc_html( get_the_title() ); ?></h2>
                         <p class="cat-card-status">
                             <?php
                             $status_terms = get_the_terms(get_the_ID(), 'adoption_status');
@@ -118,7 +118,7 @@ function omnikitty_filter_cats_handler() {
             <?php
         }
     } else {
-        echo '<p>' . __('No cats found matching your criteria.', 'omnikitty-child') . '</p>';
+        echo '<p>' . esc_html__( 'No cats found matching your criteria.', 'omnikitty-child' ) . '</p>';
     }
 
     wp_die();

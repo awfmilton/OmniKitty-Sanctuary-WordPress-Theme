@@ -28,6 +28,8 @@ get_header(); ?>
                         echo '<div class="form-error" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">Please fill in all required fields.</div>';
                     } elseif ( $status === 'nonce_error' ) {
                         echo '<div class="form-error" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">Security check failed. Please try again.</div>';
+                    } elseif ( $status === 'mail_error' ) {
+                        echo '<div class="form-error" style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">There was a problem sending your message. Please try again or contact us directly.</div>';
                     }
                 }
                 ?>

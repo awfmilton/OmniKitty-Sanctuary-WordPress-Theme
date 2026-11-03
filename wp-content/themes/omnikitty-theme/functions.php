@@ -478,37 +478,51 @@ if ( ! function_exists( 'omnikitty_post_thumbnail' ) ) :
 endif;
 
 /**
+ * Returns the HTTP referer URL, falling back to home_url() if unavailable.
+ */
+function omnikitty_get_safe_referer() {
+    $referer = wp_get_referer();
+    return $referer ? $referer : home_url();
+}
+
+/**
  * Handles the contact form submission.
  */
 function omnikitty_handle_contact_form() {
     // Verify nonce
     if ( ! isset( $_POST['contact_form_nonce'] ) || ! wp_verify_nonce( $_POST['contact_form_nonce'], 'omnikitty_contact_form_action' ) ) {
-        wp_safe_redirect( add_query_arg( 'contact_status', 'nonce_error', wp_get_referer() . '#contact-form' ) );
+        wp_safe_redirect( add_query_arg( 'contact_status', 'nonce_error', omnikitty_get_safe_referer() . '#contact-form' ) );
         exit;
     }
 
     // Sanitize and validate fields
     $contact_name = isset( $_POST['contact_name'] ) ? sanitize_text_field( $_POST['contact_name'] ) : '';
+    $contact_name = str_replace( array( "\r", "\n" ), '', $contact_name );
     $contact_email = isset( $_POST['contact_email'] ) ? sanitize_email( $_POST['contact_email'] ) : '';
     $contact_message = isset( $_POST['contact_message'] ) ? sanitize_textarea_field( $_POST['contact_message'] ) : '';
 
     if ( empty( $contact_name ) || empty( $contact_message ) || ! is_email( $contact_email ) ) {
-        wp_safe_redirect( add_query_arg( 'contact_status', 'field_error', wp_get_referer() . '#contact-form' ) );
+        wp_safe_redirect( add_query_arg( 'contact_status', 'field_error', omnikitty_get_safe_referer() . '#contact-form' ) );
         exit;
     }
 
     // Send an email with the form data.
     $admin_email = get_option( 'admin_email' );
     $subject = 'New Contact Form Submission from ' . $contact_name;
-    $headers = array('Content-Type: text/plain; charset=UTF-8', 'From: ' . $contact_name . ' <' . $contact_email . '>', 'Reply-To: ' . $contact_name . ' <' . $contact_email . '>');
+    $headers = array( 'Content-Type: text/plain; charset=UTF-8', 'From: ' . $contact_name . ' <' . $contact_email . '>', 'Reply-To: ' . $contact_name . ' <' . $contact_email . '>' );
     $body = "You have received a new message from your website contact form.\n\n";
     $body .= "Name: " . $contact_name . "\n";
     $body .= "Email: " . $contact_email . "\n";
     $body .= "Message:\n" . $contact_message . "\n";
-    wp_mail( $admin_email, $subject, $body, $headers );
+    $sent = wp_mail( $admin_email, $subject, $body, $headers );
+    if ( ! $sent ) {
+        error_log( 'OmniKitty: wp_mail() failed for contact form submission from ' . $contact_email );
+        wp_safe_redirect( add_query_arg( 'contact_status', 'mail_error', omnikitty_get_safe_referer() . '#contact-form' ) );
+        exit;
+    }
 
     // Redirect back with a success message
-    wp_safe_redirect( add_query_arg( 'contact_status', 'success', wp_get_referer() . '#contact-form' ) );
+    wp_safe_redirect( add_query_arg( 'contact_status', 'success', omnikitty_get_safe_referer() . '#contact-form' ) );
     exit;
 }
 add_action( 'admin_post_nopriv_contact_form', 'omnikitty_handle_contact_form' );
@@ -520,32 +534,38 @@ add_action( 'admin_post_contact_form', 'omnikitty_handle_contact_form' );
 function omnikitty_handle_volunteer_form() {
     // Verify nonce
     if ( ! isset( $_POST['volunteer_form_nonce'] ) || ! wp_verify_nonce( $_POST['volunteer_form_nonce'], 'omnikitty_volunteer_form_action' ) ) {
-        wp_safe_redirect( add_query_arg( 'volunteer_status', 'nonce_error', wp_get_referer() . '#volunteer-form' ) );
+        wp_safe_redirect( add_query_arg( 'volunteer_status', 'nonce_error', omnikitty_get_safe_referer() . '#volunteer-form' ) );
         exit;
     }
 
     // Sanitize and validate fields
     $volunteer_name = isset( $_POST['volunteer_name'] ) ? sanitize_text_field( $_POST['volunteer_name'] ) : '';
+    $volunteer_name = str_replace( array( "\r", "\n" ), '', $volunteer_name );
     $volunteer_email = isset( $_POST['volunteer_email'] ) ? sanitize_email( $_POST['volunteer_email'] ) : '';
     $volunteer_availability = isset( $_POST['volunteer_availability'] ) ? sanitize_textarea_field( $_POST['volunteer_availability'] ) : '';
 
     if ( empty( $volunteer_name ) || empty( $volunteer_availability ) || ! is_email( $volunteer_email ) ) {
-        wp_safe_redirect( add_query_arg( 'volunteer_status', 'field_error', wp_get_referer() . '#volunteer-form' ) );
+        wp_safe_redirect( add_query_arg( 'volunteer_status', 'field_error', omnikitty_get_safe_referer() . '#volunteer-form' ) );
         exit;
     }
 
     // Send an email with the form data.
     $admin_email = get_option( 'admin_email' );
     $subject = 'New Volunteer Application from ' . $volunteer_name;
-    $headers = array('Content-Type: text/plain; charset=UTF-8', 'From: ' . $volunteer_name . ' <' . $volunteer_email . '>', 'Reply-To: ' . $volunteer_name . ' <' . $volunteer_email . '>');
+    $headers = array( 'Content-Type: text/plain; charset=UTF-8', 'From: ' . $volunteer_name . ' <' . $volunteer_email . '>', 'Reply-To: ' . $volunteer_name . ' <' . $volunteer_email . '>' );
     $body = "You have received a new volunteer application.\n\n";
     $body .= "Name: " . $volunteer_name . "\n";
     $body .= "Email: " . $volunteer_email . "\n";
     $body .= "Availability:\n" . $volunteer_availability . "\n";
-    wp_mail( $admin_email, $subject, $body, $headers );
+    $sent = wp_mail( $admin_email, $subject, $body, $headers );
+    if ( ! $sent ) {
+        error_log( 'OmniKitty: wp_mail() failed for volunteer form submission from ' . $volunteer_email );
+        wp_safe_redirect( add_query_arg( 'volunteer_status', 'mail_error', omnikitty_get_safe_referer() . '#volunteer-form' ) );
+        exit;
+    }
 
     // Redirect back with a success message
-    wp_safe_redirect( add_query_arg( 'volunteer_status', 'success', wp_get_referer() . '#volunteer-form' ) );
+    wp_safe_redirect( add_query_arg( 'volunteer_status', 'success', omnikitty_get_safe_referer() . '#volunteer-form' ) );
     exit;
 }
 add_action( 'admin_post_nopriv_volunteer_form', 'omnikitty_handle_volunteer_form' );
@@ -558,14 +578,14 @@ function omnikitty_handle_newsletter_signup() {
     // Verify nonce
     if ( ! isset( $_POST['omnikitty_newsletter_nonce'] ) || ! wp_verify_nonce( $_POST['omnikitty_newsletter_nonce'], 'omnikitty_newsletter_signup' ) ) {
         // If nonce fails, redirect back with an error message
-        wp_safe_redirect( add_query_arg( 'newsletter_status', 'nonce_error', wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( 'newsletter_status', 'nonce_error', omnikitty_get_safe_referer() ) );
         exit;
     }
 
     // Sanitize and validate email
     if ( ! isset( $_POST['newsletter_email'] ) || ! is_email( $_POST['newsletter_email'] ) ) {
         // If email is invalid, redirect back with an error message
-        wp_safe_redirect( add_query_arg( 'newsletter_status', 'email_error', wp_get_referer() ) );
+        wp_safe_redirect( add_query_arg( 'newsletter_status', 'email_error', omnikitty_get_safe_referer() ) );
         exit;
     }
 
@@ -575,12 +595,17 @@ function omnikitty_handle_newsletter_signup() {
     // For now, we will just email the admin.
     $admin_email = get_option( 'admin_email' );
     $subject = 'New Newsletter Subscription';
-    $headers = array('Content-Type: text/plain; charset=UTF-8');
+    $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
     $body = "A new user has subscribed to the newsletter:\n\nEmail: " . $email;
-    wp_mail( $admin_email, $subject, $body, $headers );
+    $sent = wp_mail( $admin_email, $subject, $body, $headers );
+    if ( ! $sent ) {
+        error_log( 'OmniKitty: wp_mail() failed for newsletter signup from ' . $email );
+        wp_safe_redirect( add_query_arg( 'newsletter_status', 'mail_error', omnikitty_get_safe_referer() ) );
+        exit;
+    }
 
     // Redirect back to the previous page with a success message
-    wp_safe_redirect( add_query_arg( 'newsletter_status', 'success', wp_get_referer() ) );
+    wp_safe_redirect( add_query_arg( 'newsletter_status', 'success', omnikitty_get_safe_referer() ) );
     exit;
 }
 add_action( 'admin_post_nopriv_newsletter_signup', 'omnikitty_handle_newsletter_signup' );
@@ -592,7 +617,7 @@ add_action( 'admin_post_newsletter_signup', 'omnikitty_handle_newsletter_signup'
 function omnikitty_handle_adoption_form() {
     // Verify nonce
     if ( ! isset( $_POST['omnikitty_adoption_nonce'] ) || ! wp_verify_nonce( $_POST['omnikitty_adoption_nonce'], 'omnikitty_adoption_form_nonce' ) ) {
-        wp_safe_redirect( add_query_arg( 'adoption_status', 'nonce_error', wp_get_referer() . '#adoption-form-section' ) );
+        wp_safe_redirect( add_query_arg( 'adoption_status', 'nonce_error', omnikitty_get_safe_referer() . '#adoption-form-section' ) );
         exit;
     }
 
@@ -600,7 +625,7 @@ function omnikitty_handle_adoption_form() {
     $required_fields = array( 'cat_id', 'adopter_name', 'adopter_email', 'adopter_message' );
     foreach ( $required_fields as $field ) {
         if ( empty( $_POST[ $field ] ) ) {
-            wp_safe_redirect( add_query_arg( 'adoption_status', 'field_error', wp_get_referer() . '#adoption-form-section' ) );
+            wp_safe_redirect( add_query_arg( 'adoption_status', 'field_error', omnikitty_get_safe_referer() . '#adoption-form-section' ) );
             exit;
         }
     }
@@ -608,12 +633,13 @@ function omnikitty_handle_adoption_form() {
     // Sanitize form data
     $cat_id = absint( $_POST['cat_id'] );
     $adopter_name = sanitize_text_field( $_POST['adopter_name'] );
+    $adopter_name = str_replace( array( "\r", "\n" ), '', $adopter_name );
     $adopter_email = sanitize_email( $_POST['adopter_email'] );
     $adopter_message = sanitize_textarea_field( $_POST['adopter_message'] );
 
     // Validate email
     if ( ! is_email( $adopter_email ) ) {
-        wp_safe_redirect( add_query_arg( 'adoption_status', 'email_error', wp_get_referer() . '#adoption-form-section' ) );
+        wp_safe_redirect( add_query_arg( 'adoption_status', 'email_error', omnikitty_get_safe_referer() . '#adoption-form-section' ) );
         exit;
     }
 
@@ -621,12 +647,18 @@ function omnikitty_handle_adoption_form() {
     $admin_email = get_option( 'admin_email' );
     $cat_name = get_the_title( $cat_id );
     $subject = 'New Adoption Application for ' . $cat_name;
-    $headers = array('Content-Type: text/plain; charset=UTF-8', 'From: ' . $adopter_name . ' <' . $adopter_email . '>', 'Reply-To: ' . $adopter_name . ' <' . $adopter_email . '>');
+    $headers = array( 'Content-Type: text/plain; charset=UTF-8', 'From: ' . $adopter_name . ' <' . $adopter_email . '>', 'Reply-To: ' . $adopter_name . ' <' . $adopter_email . '>' );
     $body = "You have received a new adoption application for " . $cat_name . ".\n\n";
     $body .= "Applicant Name: " . $adopter_name . "\n";
     $body .= "Applicant Email: " . $adopter_email . "\n";
     $body .= "Message:\n" . $adopter_message . "\n";
-    wp_mail( $admin_email, $subject, $body, $headers );
+    $sent = wp_mail( $admin_email, $subject, $body, $headers );
+    if ( ! $sent ) {
+        error_log( 'OmniKitty: wp_mail() failed for adoption form submission from ' . $adopter_email );
+        $redirect_url = add_query_arg( 'adoption_status', 'mail_error', get_permalink( $cat_id ) );
+        wp_safe_redirect( $redirect_url );
+        exit;
+    }
 
     // Redirect back to the cat's profile page with a success message
     $redirect_url = add_query_arg( 'adoption_status', 'success', get_permalink( $cat_id ) );
@@ -833,7 +865,7 @@ if ( function_exists( 'wp_register_ability' ) ) {
 function omnikitty_list_cats_callback( $input ) {
     $args = array(
         'post_type'      => 'cat',
-        'posts_per_page' => isset( $input['per_page'] ) ? $input['per_page'] : 10,
+        'posts_per_page' => isset( $input['per_page'] ) ? min( absint( $input['per_page'] ), 100 ) : 10,
         's'              => isset( $input['search'] ) ? $input['search'] : '',
     );
 
