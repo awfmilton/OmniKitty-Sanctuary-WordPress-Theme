@@ -216,7 +216,11 @@ omnikitty-wordpress/
 
 ## 🗺️ Roadmap & Planned Features
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the full 12-phase implementation record and upcoming Phase 13–16 roadmap (Foster Network Portal, Veterinary Medical Records Tracker, Sponsor-a-Cat Recurring Donations, and AI Bioacoustics Audio Visualizer).
+See **[ROADMAP.md](ROADMAP.md)** and **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** for the complete upcoming engineering plan (~66 hours), including:
+- **Charity Donations & Recurring "Sponsor-a-Cat" Micro-Donations** (Stripe / GiveWP / WooCommerce integration so charities and rescues can receive one-time and recurring donations)
+- **Persistent Database Storage for Adoption, Volunteer & Newsletter Forms** (preventing lost applications if `wp_mail()` fails)
+- **Foster Caregiver Portal, Veterinary Medical Records, & Interactive Web Audio Spectrogram**
+- **Multilingual Support (`.pot` / `.po` / Polylang / WPML), Security Review, Infrastructure Review, and GitHub Actions CI / Automated Testing**
 
 ## 📄 License
 

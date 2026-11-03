@@ -208,20 +208,23 @@ This document outlines the phased development plan for the OmniKitty WordPress t
 
 ---
 
-## Upcoming Roadmap (25+ Hours of Planned Work)
+## Upcoming Roadmap (66+ Hours of Planned Work — See `ROADMAP.md`)
 
-### Phase 13: Foster Network & Caregiver Portal (~8 hours)
-- [x] Create custom `ok_foster_caregiver` role and front-end dashboard for active foster homes.
-- [x] Add weight, feeding, and socialization log entries linked to `cat` CPT posts.
-- [x] Automated email notifications to sanctuary coordinators when a foster flags a medical concern.
+### Phase 13: Charity Donations, Sponsor-a-Cat Recurring Micro-Donations & Supporter Tiers (~12 hours)
+- [ ] Build `page-donate.php` charity donation experience with preset impact tiers and custom one-time / monthly recurring donation flows (Stripe / GiveWP / WooCommerce).
+- [ ] WooCommerce Subscriptions / GiveWP recurring sponsorship widget on `single-cat.php` for special-needs sanctuary residents.
+- [ ] Sponsor wall and automated monthly photo-update & tax-receipt email trigger for active sponsors.
 
-### Phase 14: Veterinary Medical & Vaccination Records (~6 hours)
-- [x] Add structured repeatable meta fields for FVRCP/Rabies vaccination dates, microchip IDs, and spay/neuter certificates.
-- [x] Generate downloadable PDF medical summary sheets on `single-cat.php` for approved adopters.
+### Phase 14: Persistent Database Storage for Adoption, Volunteer & Newsletter Forms (~10 hours)
+- [ ] Register `adoption_application` and `volunteer_application` CPTs in `functions.php` so applications are persisted in WordPress before `wp_mail()` executes.
+- [ ] Build newsletter subscriber storage with double opt-in confirmation and CSV export.
 
-### Phase 15: Sponsor-a-Cat Recurring Micro-Donations (~6 hours)
-- [x] WooCommerce Subscriptions / GiveWP recurring sponsorship widget on `single-cat.php` for special-needs sanctuary residents.
-- [x] Sponsor wall and automated monthly photo-update email trigger for active sponsors.
+### Phase 15: Foster Network, Veterinary Records & Interactive Audio Visualizer (~16 hours)
+- [ ] Create custom `ok_foster_caregiver` role and front-end dashboard for active foster homes.
+- [ ] Add structured repeatable meta fields for FVRCP/Rabies vaccination dates, microchip IDs, and downloadable PDF medical summary sheets on `single-cat.php`.
+- [ ] Wire mobile navigation menu toggle (`header.php:36`) and replace homepage placeholders (`front-page.php:60-73`) including a Web Audio API cat vocalization spectrogram viewer.
 
-### Phase 16: Interactive AI Bioacoustics Showcase (~5 hours)
-- [x] Web Audio API spectrogram and vocalization classifier demo component for the Research page.
+### Phase 16: Multilingual Support, Security, Infrastructure & CI/CD Testing Reviews (~28 hours)
+- [ ] Complete `.pot`/`.po` translation catalogs (`es_ES`, `fr_CA`, `de_DE`) and Polylang/WPML compatibility.
+- [ ] Fix DMARC/SPF `From:` header alignment (`functions.php:512, 555, 650`), per-visitor transient notices (`footer.php:28`), and form rate limiting.
+- [ ] Add AJAX filter pagination/caching and GitHub Actions CI (`PHPCS`, `PHPUnit`, theme `.zip` bundler).
